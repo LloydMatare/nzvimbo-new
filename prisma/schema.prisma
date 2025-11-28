@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  avatar    String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookings  Booking[]
+  reviews   Review[]
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+model Merchant {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId      String   @unique
+  email        String   @unique
+  businessName String
+  description  String?
+  avatar       String?
+  role         UserRole @default(MERCHANT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  places Place[]
+
+  @@map("merchants")
+}
+
+model Place {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  type        PlaceType
+  address     String
+  coordinates Json // { lat: number, lng: number }
+  phone       String?
+  website     String?
+  email       String?
+  priceRange  PriceRange
+  rating      Float      @default(0)
+  reviewCount Int        @default(0)
+  isActive    Boolean    @default(true)
+  featured    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  merchantId String        @db.ObjectId
+  merchant   Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  images     Image[]
+  menus      Menu[]
+  amenities  Amenity[]
+  hours      OpeningHour[]
+  bookings   Booking[]
+  reviews    Review[]
+  favorites  Favorite[]
+
+  @@map("places")
+}
+
+model Image {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  url     String
+  alt     String?
+  order   Int
+  placeId String  @db.ObjectId
+  place   Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("images")
+}
+
+model Menu {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  category String
+  items    Json // Array of menu items
+  placeId  String @db.ObjectId
+  place    Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("menus")
+}
+
+model Amenity {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  placeId String @db.ObjectId
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("amenities")
+}
+
+model OpeningHour {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  day       String
+  openTime  String
+  closeTime String
+  placeId   String @db.ObjectId
+  place     Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("opening_hours")
+}
+
+model Booking {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  date            DateTime
+  time            String
+  guests          Int
+  status          BookingStatus @default(PENDING)
+  specialRequests String?
+  totalAmount     Float
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placeId String @db.ObjectId
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating    Int
+  comment   String?
+  helpful   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placeId String @db.ObjectId
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Favorite {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placeId String @db.ObjectId
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, placeId])
+  @@map("favorites")
+}
+
+enum UserRole {
+  USER
+  MERCHANT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PlaceType {
+  RESTAURANT
+  GRILL_PUB
+  HOTEL_LODGE
+  SPORTS_BAR
+  CAFE
+  LOUNGE
+  NIGHTCLUB
+  ROOFTOP_BAR
+}
+
+enum PriceRange {
+  LOW // $
+  MEDIUM // $$
+  HIGH // $$$
+  PREMIUM // $$$$
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CuisineType {
+  AMERICAN
+  ITALIAN
+  MEXICAN
+  CHINESE
+  INDIAN
+  JAPANESE
+  THAI
+  FRENCH
+  GREEK
+  SPANISH
+  LEBANESE
+  TURKISH
+  KOREAN
+  VIETNAMESE
+  BRAZILIAN
+  MEDITERRANEAN
+  MIDDLE_EASTERN
+  AFRICAN
+  CARIBBEAN
+  ASIAN_FUSION
+  OTHER
+}
